@@ -34,6 +34,7 @@ public class WebSecurityConfig {
     private static final String[] WHITE_LIST_URL = {"/users/register",
             "/users/publishevent",
             "/users/logout",
+            "/userinfos/userInfoAndAvatar",
             "/users/verificationEmail",
             "/users/authentication",
             "/comments/list/**",
@@ -49,7 +50,8 @@ public class WebSecurityConfig {
             "/video/listVideoAnimeType",
             "/video/getAllChase",
             "/video/getVideoScore",
-            "/scoring/all/comment/**"
+            "/scoring/all/comment/**",
+            "/file/get/file"
     };
     private static final String[] USER_LIST_URL = {
             "/userinfos/**",
@@ -60,6 +62,12 @@ public class WebSecurityConfig {
             "/scoring/addScore",
             "/scoring/put-comments/**",
             "/scoring/deleted/**",
+    };
+
+    private static final String[] ADMIN_LIST_URL = {
+            "/video/add/video",
+            "/video/add/url",
+            "/file/add"
     };
     private final AuthenticationProvider authenticationProvider;
 
@@ -72,9 +80,7 @@ public class WebSecurityConfig {
                                     .permitAll()
                                     .requestMatchers(USER_LIST_URL)
                                     .hasAnyRole(USER.name(),ADMIN.name())
-                                    .requestMatchers(POST,"/video/add/video")
-                                    .hasAuthority("admin:create")
-                                    .requestMatchers(POST,"/video/add/url")
+                                    .requestMatchers(POST,ADMIN_LIST_URL)
                                     .hasAuthority("admin:create")
                                     .requestMatchers(DELETE,"/video/deleteVideo/**")
                                     .hasAuthority("admin:delete")

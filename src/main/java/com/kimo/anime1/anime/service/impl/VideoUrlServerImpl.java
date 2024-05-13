@@ -87,6 +87,7 @@ public class VideoUrlServerImpl implements IVideoUrlService {
             }
         }
         VideoUrl videoUrl = urlRepository.findByIdAndVideo(uuid, videoId);
+
         String[] encryptObject = aesProperties.encryptObject(videoUrl.getUrl());
         String accessToken = generateAccessTokenInfo(uuid, 300,false);
         AccessTokenDTO accessTokenDTO = new AccessTokenDTO();

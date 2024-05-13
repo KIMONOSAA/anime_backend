@@ -10,7 +10,7 @@ import java.util.*;
 import com.kimo.anime1.anime.comment.ErrorCode;
 import com.kimo.anime1.anime.exception.BusinessException;
 import com.kimo.anime1.anime.repository.VideoRepository;
-import com.kimo.anime1.anime.service.IFileService;
+import com.kimo.anime1.anime.service.IVideoFileService;
 import com.kimo.anime1.anime.service.IVideoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,7 +33,7 @@ import com.kimo.anime1.anime.model.response.FileUpLoadResultResponse;
  * @Author  kimo
  */
 @Service
-public class FileService implements IFileService {
+public class VideoVideoFileService implements IVideoFileService {
 
     private static final String[] IMAGE_TYPE = new String[]{".bmp", ".jpg",
             ".jpeg", ".gif", ".png",".mp4"};

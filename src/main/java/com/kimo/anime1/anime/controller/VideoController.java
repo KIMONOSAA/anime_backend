@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 
 import com.kimo.anime1.anime.comment.BaseResponse;
 import com.kimo.anime1.anime.comment.ErrorCode;
-import com.kimo.anime1.anime.comment.PageRequest;
 import com.kimo.anime1.anime.enums.ResultsUtils;
 import com.kimo.anime1.anime.exception.BusinessException;
 import com.kimo.anime1.anime.model.dto.AccessTokenDTO;
@@ -25,13 +24,12 @@ import com.kimo.anime1.anime.service.IVideoUrlService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.kimo.anime1.anime.model.entity.Video;
 import com.kimo.anime1.anime.model.entity.VideoUrl;
-import com.kimo.anime1.anime.service.impl.FileService;
+import com.kimo.anime1.anime.service.impl.VideoVideoFileService;
 import com.kimo.anime1.anime.service.IVideoService;
 
 
@@ -54,7 +52,7 @@ import javax.crypto.NoSuchPaddingException;
 public class VideoController {
 
     @Autowired
-    private FileService fileService;
+    private VideoVideoFileService videoFileService;
 
     @Autowired
     private IVideoService iVideoService;
@@ -74,7 +72,7 @@ public class VideoController {
         UUID uuid = videoUploadRequest.getVideoId();
         MultipartFile uploadFile = videoUploadRequest.getUploadFile();
         Integer section = videoUploadRequest.getSection();
-        FileUpLoadResultResponse videoUpdate = fileService.upload(uploadFile, uuid,section);
+        FileUpLoadResultResponse videoUpdate = videoFileService.upload(uploadFile, uuid,section);
         if("success".equals(videoUpdate.getResponse())){
             return ResultsUtils.success(videoUpdate);
         }else{
@@ -118,6 +116,7 @@ public class VideoController {
      */
     //@RequestParam("name") String videoName,@RequestParam("alias") String videoAlias,@RequestParam("type") String videoType, @RequestParam("description") String videoDescription,@RequestParam("numberOfSections") int videoNumberOfSections, @RequestParam("animeCompany") String videoAnimeCompany ,@RequestParam("directorName") String videoDirectorName, @RequestParam("comicBookAuthor") String videoComicBookAuthor, @RequestParam("voiceActor") String videoVoiceActor,@RequestParam("date") String date,@RequestParam("animeType") String animeType,@RequestParam("photo") MultipartFile photoFile
     @PostMapping("/add/video")
+    @Transactional
     public BaseResponse<String> videoUpload( VideoInfoAddRequest videoInfoAddRequest
                                             ){
         if (videoInfoAddRequest == null){
@@ -200,18 +199,6 @@ public class VideoController {
 
     }
 
-    /**
-     * 获取指定UUID视频的所有集数
-     * @return
-     */
-    @GetMapping("/getVideoSection/{uuid}")
-    public BaseResponse<List<Integer>> getVideoUrl(@PathVariable UUID uuid){
-        if(uuid == null){
-            return ResultsUtils.error(ErrorCode.NULL_ERROR,"参数不能为空");
-        }
-        List<VideoUrl> videoUrlList = iVideoService.findById(uuid).orElseThrow(() -> new BusinessException(ErrorCode.VIDEO_ERROR, "没有找到这个视频")).getVideoUrl();
-        return ResultsUtils.success(videoUrlList.stream().map(VideoUrl::getSection).toList());
-    }
 
 
     /**
@@ -223,6 +210,7 @@ public class VideoController {
      * @throws IOException
      */
     @GetMapping("/getVideo/{uuid}/{videoId}")
+    @Transactional
     public BaseResponse<AccessTokenDTO> getEncryptedVideoUrlByUuidAndVideoId(@PathVariable UUID uuid, @PathVariable Long videoId, HttpServletRequest request) throws IOException {
         if(uuid == null){
             return ResultsUtils.error(ErrorCode.NULL_ERROR,"参数不能为空");
@@ -250,6 +238,7 @@ public class VideoController {
      * @throws ClassNotFoundException
      */
     @PostMapping("/getVideoUrl")
+    @Transactional
     public BaseResponse<String> getVideoAndDecryptObject(@RequestBody AccessTokenVideoUrlRequest accessTokenVideoUrlRequest) throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, IOException, InvalidKeyException, ClassNotFoundException {
         if(accessTokenVideoUrlRequest == null){
             return ResultsUtils.error(ErrorCode.NULL_ERROR,"参数不能为空");
@@ -310,6 +299,7 @@ public class VideoController {
      * @return
      */
     @DeleteMapping("/deleteVideo/{videoId}")
+    @Transactional
     public BaseResponse<String> deleteVideoResponseById(@PathVariable UUID videoId){
         // 尝试获取视频，如果视频不存在，get()方法会抛出异常
         Optional<Video> optionalVideo = iVideoService.getVideo(videoId);
@@ -331,6 +321,7 @@ public class VideoController {
      * @return
      */
     @PutMapping("/updated/{videoId}")
+    @Transactional
     public BaseResponse<?> updateVideoResponse(@RequestBody VideoUpdateRequest video, @PathVariable UUID videoId ){
         if(video == null || videoId == null){
             return ResultsUtils.error(ErrorCode.VIDEO_ERROR,"参数不能为空");
@@ -368,6 +359,7 @@ public class VideoController {
      * @return
      */
     @GetMapping("/getVideoHop")
+    @Transactional
     public BaseResponse<List<VideoInfoScoringResponse>> getVideoView(){
         return ResultsUtils.success(iVideoService.getAllvideoHotop());
     }
@@ -378,6 +370,7 @@ public class VideoController {
      * @return
      */
     @GetMapping("/getVideoScore")
+    @Transactional
     public BaseResponse<List<VideoInfoScoringResponse>> getVideoScore(){
         List<VideoInfoScoringResponse> videoInfoScoringResponses = iVideoService.getAllVideoScores();
         return ResultsUtils.success(videoInfoScoringResponses);
@@ -408,6 +401,7 @@ public class VideoController {
      * @return
      */
     @PostMapping("/listVideoAnimeType")
+    @Transactional
     public BaseResponse<List<VideoInfoResponse>> listVideoForAnimeType(@RequestBody VideoAnimeTypeRequest videoAnimeTypeRequest){
         List<Video> videos = iVideoService.listVideoForAnimeType(videoAnimeTypeRequest.getAnimeType());
         List<VideoInfoResponse> videoList = videos.stream().map(this::reverseSequence).toList();
@@ -422,14 +416,36 @@ public class VideoController {
      * @return
      */
     @PostMapping("/getAllChase")
+    @Transactional
     public BaseResponse<List<VideoInfoResponse>> getAllChase(@RequestBody VideoInfoDateRequest videoInfoDateRequest){
         List<Video> videos = iVideoService.listVideoForAnimeDateInChase(videoInfoDateRequest.getAnimeDate());
         List<VideoInfoResponse> videoList = videos.stream().map(this::reverseSequence).collect(Collectors.toList());
         return ResultsUtils.success(videoList);
     }
+    /**
+     * 获取指定UUID视频的所有集数
+     * @return
+     */
+    @GetMapping("/getVideoSection/{uuid}")
+    public BaseResponse<List<SectionUrlIdResponse>> getVideoUrl(@PathVariable UUID uuid){
+        if(uuid == null){
+            return ResultsUtils.error(ErrorCode.NULL_ERROR,"参数不能为空");
+        }
+        List<VideoUrl> videoUrlList = iVideoService.findById(uuid).orElseThrow(() -> new BusinessException(ErrorCode.VIDEO_ERROR, "没有找到这个视频")).getVideoUrl();
+        return ResultsUtils.success(videoUrlList.stream().map(this::getSectionAndUrlId).toList());
+    }
 
 
 
+    public SectionUrlIdResponse getSectionAndUrlId(VideoUrl videoUrl) {
+        if (videoUrl == null){
+            throw new BusinessException(ErrorCode.VIDEO_ERROR,"没有找到这个视频");
+        }
+        return SectionUrlIdResponse.builder()
+                .UrlId(videoUrl.getId())
+                .SectionId(videoUrl.getSection())
+                .build();
+    }
 
     
     public VideoTitleResponse getVideoTitleResponse(Video video){
@@ -482,23 +498,6 @@ public class VideoController {
 
     }
 
-    public VideoResponse getVideoResponse(Video video){
-        
-        Blob photoBlob = video.getPhoto();
-        
-        byte[] photoBytes = null;
-        
-            if(photoBlob != null){
-                try {
-                    photoBytes = photoBlob.getBytes(1, (int) photoBlob.length());
-                } catch (SQLException e) {
-                    throw new BusinessException(ErrorCode.FILE_ERROR,"文件类型错误");
-                }
-                
-            }
-        
-        return new VideoResponse(video.getId(), video.getName(), video.getAlias(), Collections.singletonList(video.getType()), video.getDescription(), video.getNumberOfSections(), photoBytes, video.getDirectorName(), Collections.singletonList(video.getVoiceActor()), video.getDate(), null, video.getAnimeCompany(), video.getComicBookAuthor());
-    }
 
 
 
